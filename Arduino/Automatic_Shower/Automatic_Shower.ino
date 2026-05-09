@@ -19,7 +19,8 @@ Servo myservo;
 uint32_t time;
 bool enableHeater = false;
 uint32_t t0 = millis();
-int pos = 0 // between 0 and 180
+int pos = 0; // between 0 and 180
+float target_hum = 37.0;
 
 
 void setup() {
@@ -40,6 +41,7 @@ void setup() {
     Serial.println("DISABLED");
 
   myservo.attach(9);
+  myservo.write(pos);
 
   Serial.println("Time (sec),Temp (*C),Humidity (%)");
 }
@@ -68,6 +70,10 @@ void loop() {
   Serial.print(temp); Serial.print(",");
   Serial.println(hum);
 
-  delay(1000);
+  if (hum < target_hum) {
+    pos = 180;
+    myservo.write(pos);
+  }
 
+  delay(1000);
 }
