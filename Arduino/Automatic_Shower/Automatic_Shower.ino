@@ -16,18 +16,26 @@
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
 Servo myservo;
 
-uint32_t time;
+uint32_t time, time_prev, t0;
+float hum, temp;
 bool enableHeater = false;
-uint32_t t0 = millis();
 int pos = 0; // between 0 and 180
-float target_hum = 37.0;
+int state = 0;
+float target_hum = 60.0;
 
+/* low pass Infinite Impulse Response (IIR) filter*/
+double dt;
+double tau = 10;
+double alpha;
+double y;
 
 void setup() {
   Serial.begin(9600);
 
   while (!Serial)
     delay(10);
+
+  Serial.println("Serial Initialized");
 
   if (! sht31.begin(0x44)) {
     Serial.println("Couldn't find SHT31");
@@ -43,37 +51,34 @@ void setup() {
   myservo.attach(9);
   myservo.write(pos);
 
+  t0 = millis();
   Serial.println("Time (sec),Temp (*C),Humidity (%)");
+
+  delay(100);
+  y = sht31.readHumidity();
 }
 
 
 void loop() {
-  float temp = sht31.readTemperature();
-  float hum = sht31.readHumidity();
-
-  if (! isnan(temp)) {  // check if 'is not a number'
-    // Serial.print("Temp *C = "); Serial.print(temp); Serial.print("\t\t");
-  } else { 
-    // Serial.println("Failed to read temperature");
-  }
-  
-  if (! isnan(hum)) {  // check if 'is not a number'
-    // Serial.print("Hum. % = "); Serial.print(hum);
-  } else { 
-    // Serial.println("Failed to read humidity");
-  }
-
+  temp = sht31.readTemperature();
+  hum = sht31.readHumidity();
+  time_prev = time;
   time = millis() - t0;
-  // Serial.print("\t\tTime = "); Serial.println(time * 1e-3);
+  dt = (time - time_prev) * 1e-3;
+  alpha = dt / tau;
+
+  /* low pass filter implementation */
+  y += alpha * (hum - y);
 
   Serial.print(time * 1e-3); Serial.print(",");
   Serial.print(temp); Serial.print(",");
-  Serial.println(hum);
+  Serial.print(hum); Serial.print(",");
+  Serial.println(y);
 
   if (hum < target_hum) {
     pos = 180;
     myservo.write(pos);
   }
 
-  delay(1000);
+  delay(100);
 }
