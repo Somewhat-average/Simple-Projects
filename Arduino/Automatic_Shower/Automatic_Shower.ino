@@ -21,11 +21,11 @@ float hum, temp;
 bool enableHeater = false;
 int pos = 0; // between 0 and 180
 int state = 0;
-float target_hum = 60.0;
+float target_hum = 55.0;
 
 /* low pass Infinite Impulse Response (IIR) filter*/
 double dt;
-double tau = 60; /* Time constant in seconds */
+double tau = 10; /* Time constant in seconds */
 double alpha;
 double y;
 
@@ -72,11 +72,15 @@ void loop() {
 
   Serial.print(time * 1e-3, 3); Serial.print(",");
   Serial.print(temp, 6); Serial.print(",");
-  Serial.print(hum, 6); Serial.print(",");
+  // Serial.print(hum, 6); Serial.print(",");
   Serial.println(y, 6);
 
-  if (hum < target_hum) {
+  if (state == 0 && y > target_hum*1.1) {
+    state++;
+  }
+  if (y < target_hum && state == 1) {
     pos = 180;
+    state = 0;
     myservo.write(pos);
   }
 
