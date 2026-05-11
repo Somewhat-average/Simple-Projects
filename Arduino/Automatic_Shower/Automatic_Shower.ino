@@ -25,7 +25,7 @@ float target_hum = 60.0;
 
 /* low pass Infinite Impulse Response (IIR) filter*/
 double dt;
-double tau = 10;
+double tau = 60; /* Time constant in seconds */
 double alpha;
 double y;
 
@@ -52,7 +52,7 @@ void setup() {
   myservo.write(pos);
 
   t0 = millis();
-  Serial.println("Time (sec),Temp (*C),Humidity (%)");
+  Serial.println("Time (sec),Temp (*C),Humidity (%), Filtered Humidity (%)");
 
   delay(100);
   y = sht31.readHumidity();
@@ -70,15 +70,15 @@ void loop() {
   /* low pass filter implementation */
   y += alpha * (hum - y);
 
-  Serial.print(time * 1e-3); Serial.print(",");
-  Serial.print(temp); Serial.print(",");
-  Serial.print(hum); Serial.print(",");
-  Serial.println(y);
+  Serial.print(time * 1e-3, 3); Serial.print(",");
+  Serial.print(temp, 6); Serial.print(",");
+  Serial.print(hum, 6); Serial.print(",");
+  Serial.println(y, 6);
 
   if (hum < target_hum) {
     pos = 180;
     myservo.write(pos);
   }
 
-  delay(100);
+  delay(1000);
 }
